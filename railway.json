@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "variables": {
+    "DATABASE_URL": "postgresql://${{Postgres.PGUSER}}:${{Postgres.PGPASSWORD}}@${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}",
+    "ENVIRONMENT": "production"
+  },
+  "services": {
+    "api": {
+      "source": "./backend",
+      "buildCommand": "pip install -r requirements.txt",
+      "startCommand": "uvicorn main:app --host 0.0.0.0 --port 8000",
+      "port": 8000
+    },
+    "web": {
+      "source": "./frontend",
+      "buildCommand": "npm install && npm run build",
+      "startCommand": "npm run dev",
+      "port": 5173
+    },
+    "postgres": {
+      "type": "postgres"
+    }
+  }
+}
