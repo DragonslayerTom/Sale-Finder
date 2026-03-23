@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import logging
 import os
+from pathlib import Path
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -111,3 +114,11 @@ async def debug():
             for route in app.routes
         ]
     }
+
+# Serve frontend static files (if built)
+frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
+if frontend_dist.exists():
+    app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
+    logger.info(f"✓ Frontend static files mounted from {frontend_dist}")
+else:
+    logger.warning(f"⚠ Frontend dist not found at {frontend_dist}")
