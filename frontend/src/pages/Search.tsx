@@ -83,13 +83,40 @@ export default function Search() {
 
       {products.length > 0 ? (
         <div className="space-y-6">
-          {products.map((product) => (
-            <div key={product.id} className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-xl font-bold mb-2">{product.name}</h2>
-              <p className="text-gray-600 mb-4">{product.description}</p>
-              <PriceTable retailers={product.retailers} />
-            </div>
-          ))}
+          {products.map((product) => {
+            const lowestPrice = Math.min(...product.retailers.map(r => r.price))
+            return (
+              <div key={product.id} className="bg-white p-6 rounded-lg shadow">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h2 className="text-xl font-bold mb-2">{product.name}</h2>
+                    <p className="text-gray-600 mb-2">{product.description}</p>
+                    <p className="text-lg font-bold text-blue-600">Lowest: ${lowestPrice.toFixed(2)}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const watchlist = JSON.parse(localStorage.getItem('dealWatchlist') || '[]')
+                      watchlist.push({
+                        id: Date.now().toString(),
+                        productName: product.name,
+                        targetPrice: lowestPrice,
+                        currentPrice: lowestPrice,
+                        bestRetailer: product.retailers.find(r => r.price === lowestPrice)?.retailer,
+                        addedAt: new Date().toISOString(),
+                        notified: false
+                      })
+                      localStorage.setItem('dealWatchlist', JSON.stringify(watchlist))
+                      alert('Added to watchlist!')
+                    }}
+                    className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition whitespace-nowrap"
+                  >
+                    ⭐ Save
+                  </button>
+                </div>
+                <PriceTable retailers={product.retailers} />
+              </div>
+            )
+          })}
         </div>
       ) : !loading && query && (
         <div className="text-center py-8 bg-white rounded-lg">
