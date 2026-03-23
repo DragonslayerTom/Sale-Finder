@@ -1,51 +1,84 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 from database import get_db
-from models import Product, Price
+import asyncio
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# Import scraper
+try:
+    from scraper import DealAggregator
+    HAS_SCRAPER = True
+except:
+    HAS_SCRAPER = False
+    logger.warning("Scraper not available - using mock data")
 
 @router.get("/")
 async def search(
     q: str,
-    category: str = None,
     skip: int = 0,
     limit: int = 20,
     db: Session = Depends(get_db)
 ):
-    """Search for products"""
-    query = db.query(Product)
+    """Search for products from real retailers"""
     
-    if q:
-        query = query.filter(Product.name.ilike(f"%{q}%"))
+    if not q or len(q.strip()) < 2:
+        return {
+            "query": q,
+            "products": [],
+            "total": 0,
+            "error": "Query must be at least 2 characters"
+        }
     
-    if category:
-        query = query.filter(Product.category.ilike(f"%{category}%"))
-    
-    total = query.count()
-    products = query.offset(skip).limit(limit).all()
-    
-    # Get best deal for each product
-    results = []
-    for product in products:
-        best_price = db.query(Price).filter(
-            Price.product_id == product.id
-        ).order_by(Price.price.asc()).first()
+    try:
+        # Use real scraper if available
+        if HAS_SCRAPER:
+            aggregator = DealAggregator()
+            products_data = await aggregator.search_all(q, limit=10)
+            
+            # Group by product name, keep unique retailers
+            results = {}
+            for item in products_data:
+                key = item['name'][:50]  # Group by first 50 chars
+                if key not in results:
+                    results[key] = {'name': item['name'], 'retailers': []}
+                
+                results[key]['retailers'].append({
+                    'retailer': item['retailer'],
+                    'price': item['price'],
+                    'url': item['url']
+                })
+            
+            # Sort by lowest price
+            products = list(results.values())
+            for p in products:
+                p['retailers'].sort(key=lambda x: x['price'])
+            products.sort(key=lambda x: x['retailers'][0]['price'] if x['retailers'] else float('inf'))
+            
+            return {
+                "query": q,
+                "products": products[:limit],
+                "total": len(products),
+                "source": "live_scraper"
+            }
         
-        results.append({
-            "id": product.id,
-            "name": product.name,
-            "category": product.category,
-            "best_deal": {
-                "retailer": best_price.retailer if best_price else None,
-                "price": best_price.price if best_price else None,
-                "url": best_price.url if best_price else None,
-            } if best_price else None
-        })
+        else:
+            # Fallback: empty response
+            return {
+                "query": q,
+                "products": [],
+                "total": 0,
+                "error": "Scraper not configured"
+            }
     
-    return {
-        "query": q,
-        "products": results,
-        "total": total
-    }
+    except Exception as e:
+        logger.error(f"Search error: {e}")
+        return {
+            "query": q,
+            "products": [],
+            "total": 0,
+            "error": str(e)
+        }
