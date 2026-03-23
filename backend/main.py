@@ -20,22 +20,65 @@ app.add_middleware(
 loaded_routes = []
 errors = []
 
-# Only load routes if database is configured
+# Load scraper (always works)
+try:
+    from scraper import DealAggregator
+    logger.info("✓ Scraper loaded")
+except Exception as e:
+    logger.warning(f"⚠ Scraper failed: {e}")
+
+# Try database, but don't require it
 try:
     from database import engine, Base
-    from routes import search, products
-    
     Base.metadata.create_all(bind=engine)
-    app.include_router(search.router, prefix="/api/search", tags=["search"])
-    app.include_router(products.router, prefix="/api/products", tags=["products"])
-    
-    loaded_routes = ["search", "products"]
-    logger.info("✓ Database and routes loaded successfully")
+    logger.info("✓ Database initialized")
 except Exception as e:
-    error_msg = f"⚠ Database/routes failed: {str(e)}"
+    error_msg = f"⚠ Database initialization failed (using mock scraper): {str(e)}"
     errors.append(error_msg)
-    logger.error(error_msg)
-    logger.info("✓ Running in demo mode (fallback)")
+    logger.warning(error_msg)
+
+# Add search route with scraper fallback
+@app.get("/api/search")
+async def search_endpoint(q: str, limit: int = 20):
+    """Search using real scraper (mock data if retailers blocked)"""
+    import asyncio
+    try:
+        from scraper import DealAggregator
+        agg = DealAggregator()
+        products_data = await agg.search_all(q, limit=10)
+        
+        # Group by product name
+        results = {}
+        for item in products_data:
+            key = item['name'][:50]
+            if key not in results:
+                results[key] = {'name': item['name'], 'retailers': []}
+            results[key]['retailers'].append({
+                'retailer': item['retailer'],
+                'price': item['price'],
+                'url': item['url']
+            })
+        
+        products = list(results.values())
+        for p in products:
+            p['retailers'].sort(key=lambda x: x['price'])
+        products.sort(key=lambda x: x['retailers'][0]['price'] if x['retailers'] else float('inf'))
+        
+        return {
+            "query": q,
+            "products": products[:limit],
+            "total": len(products),
+            "source": "live_scraper"
+        }
+    except Exception as e:
+        return {
+            "query": q,
+            "products": [],
+            "error": str(e)
+        }
+
+loaded_routes = ["search (scraper)"]
+logger.info("✓ Search endpoint (scraper) loaded")
 
 @app.get("/")
 async def root():
