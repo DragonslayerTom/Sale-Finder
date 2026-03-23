@@ -1,12 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from database import engine, Base
-from routes import search, products
 import logging
+import os
 
 logging.basicConfig(level=logging.INFO)
-
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Deal Aggregator API", version="1.0.0")
 
@@ -18,12 +15,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(search.router, prefix="/api/search", tags=["search"])
-app.include_router(products.router, prefix="/api/products", tags=["products"])
+# Only load routes if database is configured
+try:
+    from database import engine, Base
+    from routes import search, products
+    
+    Base.metadata.create_all(bind=engine)
+    app.include_router(search.router, prefix="/api/search", tags=["search"])
+    app.include_router(products.router, prefix="/api/products", tags=["products"])
+    logging.info("✓ Database and routes loaded")
+except Exception as e:
+    logging.warning(f"⚠ Database not available: {e}. Running in demo mode.")
 
 @app.get("/")
 async def root():
-    return {"message": "Deal Aggregator API"}
+    return {
+        "message": "Deal Aggregator API",
+        "version": "1.0.0",
+        "status": "running"
+    }
 
 @app.get("/health")
 async def health():
