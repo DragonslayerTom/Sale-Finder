@@ -14,7 +14,7 @@
     "web": {
       "source": "./frontend",
       "buildCommand": "npm install && npm run build",
-      "startCommand": "npm run dev",
+      "startCommand": "vite preview --host 0.0.0.0 --port 5173",
       "port": 5173
     },
     "postgres": {
