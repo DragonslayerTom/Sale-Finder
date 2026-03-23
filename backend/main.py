@@ -116,9 +116,21 @@ async def debug():
     }
 
 # Serve frontend static files (if built)
-frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
-if frontend_dist.exists():
+# Try multiple paths to find frontend dist
+possible_paths = [
+    Path(__file__).parent.parent / "frontend" / "dist",
+    Path(__file__).parent.parent.parent / "frontend" / "dist",
+    Path("/app/frontend/dist"),  # Railway might use /app as root
+]
+
+frontend_dist = None
+for path in possible_paths:
+    if path.exists():
+        frontend_dist = path
+        break
+
+if frontend_dist:
     app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
     logger.info(f"✓ Frontend static files mounted from {frontend_dist}")
 else:
-    logger.warning(f"⚠ Frontend dist not found at {frontend_dist}")
+    logger.warning(f"⚠ Frontend dist not found. Tried: {[str(p) for p in possible_paths]}")
