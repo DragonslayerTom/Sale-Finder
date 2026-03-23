@@ -156,6 +156,69 @@ class EbayScraper(RetailerScraper):
             return []
 
 
+class AmazonPlaywrightScraper(RetailerScraper):
+    """Amazon scraper using Playwright for JavaScript-rendered content"""
+    
+    def __init__(self):
+        super().__init__('Amazon (JS)', 'https://www.amazon.com')
+    
+    async def search(self, query: str, limit: int = 5) -> List[Dict]:
+        """Search Amazon using Playwright"""
+        if not HAS_PLAYWRIGHT:
+            return []
+        
+        try:
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(headless=True)
+                page = await browser.new_page()
+                page.set_default_timeout(15000)
+                
+                # Search Amazon
+                url = f"{self.base_url}/s?k={query}"
+                await page.goto(url, wait_until='networkidle')
+                
+                products = []
+                
+                # Get product elements
+                items = await page.locator('div[data-component-type="s-search-result"]').all()
+                
+                for item in items[:limit]:
+                    try:
+                        # Extract title
+                        title_elem = await item.locator('h2 a span').first.text_content()
+                        if not title_elem:
+                            continue
+                        
+                        # Extract price
+                        price_elem = await item.locator('span.a-price-whole').first.text_content()
+                        if not price_elem:
+                            continue
+                        
+                        # Extract URL
+                        link_elem = await item.locator('h2 a').first.get_attribute('href')
+                        if not link_elem:
+                            continue
+                        
+                        price_str = price_elem.replace('$', '').replace(',', '').strip()
+                        
+                        products.append({
+                            'retailer': 'Amazon',
+                            'name': title_elem.strip(),
+                            'price': float(price_str),
+                            'url': f"{self.base_url}{link_elem}"
+                        })
+                    except Exception as e:
+                        logger.debug(f"Error parsing Amazon product (PW): {e}")
+                        continue
+                
+                await browser.close()
+                return products
+        
+        except Exception as e:
+            logger.error(f"Amazon Playwright scrape error: {e}")
+            return []
+
+
 class BestBuyScraper(RetailerScraper):
     """Best Buy product scraper"""
     
@@ -231,7 +294,8 @@ class DealAggregator:
     
     def __init__(self):
         self.scrapers = [
-            AmazonScraper(),
+            AmazonPlaywrightScraper(),  # Try JS-rendered Amazon first
+            AmazonScraper(),             # Fallback to basic HTTP scraper
             EbayScraper(),
             BestBuyScraper(),
         ]
