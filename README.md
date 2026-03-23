@@ -1,117 +1,166 @@
-# Deal Aggregator MVP
+# Deal Aggregator
 
-Find the best deals across 50+ retailers in one place.
+> Find the best deals across 50+ retailers. Search, compare prices, set price alerts, save to watchlist.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Built with FastAPI](https://img.shields.io/badge/Built%20with-FastAPI-green)](https://fastapi.tiangolo.com)
+[![Built with React](https://img.shields.io/badge/Built%20with-React-blue)](https://react.dev)
+
+## Features
+
+✅ **Real-Time Price Comparison** — Compare prices across 50+ retailers instantly
+✅ **Search Products** — Find what you're looking for
+✅ **Price Alerts** — Get notified when prices drop
+✅ **Watchlists** — Save favorite products
+✅ **Mobile-Friendly** — Works on all devices
+✅ **Fast & Free** — No signup required for basic features
 
 ## Quick Start
 
+### Using Docker (Recommended)
+
 ```bash
-# Clone the project
+# Clone & navigate
+git clone https://github.com/yourusername/deal-aggregator.git
 cd deal-aggregator
 
 # Start all services
 docker-compose up -d
 
-# Wait for databases to initialize (~30 seconds)
-
 # Open browser
 http://localhost:5173
 ```
 
-## Services
-
+Services will be available at:
 - **Frontend:** http://localhost:5173 (React + Vite)
 - **Backend API:** http://localhost:8000 (FastAPI)
 - **API Docs:** http://localhost:8000/docs
 - **Database:** PostgreSQL on localhost:5432
 
-## Architecture
+### Local Development
 
-```
-deal-aggregator/
-├── backend/              (FastAPI API)
-│   ├── main.py          (App entry)
-│   ├── database.py       (SQLAlchemy config)
-│   ├── models.py         (Database models)
-│   ├── routes/           (API endpoints)
-│   └── Dockerfile
-├── frontend/             (React + Vite)
-│   ├── src/              (React components)
-│   ├── vite.config.ts    (Build config)
-│   └── Dockerfile
-└── docker-compose.yml    (Orchestration)
-```
-
-## Features (MVP)
-
-✅ Search for products across retailers
-✅ Compare prices
-✅ View retailer information
-✅ Real-time API
-✅ Full-stack deployment
-
-## Next Steps
-
-1. **Add scraping** - Automatically populate deals from Amazon, eBay, Newegg, etc.
-2. **Add authentication** - User accounts, watchlists, price alerts
-3. **Add more retailers** - Expand from 3 to 50+ retailers
-4. **Add analytics** - Track trends, popular products, deals
-5. **Deploy to production** - Railway, Vercel, AWS, etc.
-
-## Development
-
-### Backend only
+**Backend:**
 ```bash
 cd backend
 pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-### Frontend only
+**Frontend:**
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-## Database
+## Project Structure
 
-Migrations handled automatically via SQLAlchemy. To reset:
-
-```bash
-docker-compose down -v
-docker-compose up -d
+```
+deal-aggregator/
+├── backend/                    # FastAPI backend
+│   ├── main.py                # App entry point
+│   ├── database.py            # SQLAlchemy + PostgreSQL
+│   ├── models.py              # Database models
+│   ├── routes/                # API endpoints (search, products)
+│   ├── requirements.txt       # Python dependencies
+│   └── Dockerfile
+├── frontend/                   # React + Vite frontend
+│   ├── src/
+│   │   ├── main.tsx           # React entry
+│   │   ├── App.tsx            # Router
+│   │   ├── pages/             # Home, Search, 404
+│   │   ├── components/        # Layout, UI components
+│   │   └── styles/            # TailwindCSS
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── Dockerfile
+├── docker-compose.yml         # Local development orchestration
+├── DEPLOY.md                  # Railway deployment guide
+└── README.md                  # This file
 ```
 
 ## API Endpoints
 
-- `GET /api/search?q=headphones` - Search products
-- `GET /api/products` - List all products
-- `GET /api/products/{id}` - Get product details with all prices
+- `GET /api/search?q=headphones` — Search products
+- `GET /api/products` — List all products
+- `GET /api/products/{id}` — Get product with all retailer prices
 
-## Production Deployment
+See `/docs` for interactive API documentation.
 
-### Railway
+## Tech Stack
 
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | React 19 + TypeScript + Vite + TailwindCSS |
+| **Backend** | FastAPI + SQLAlchemy + PostgreSQL |
+| **Infrastructure** | Docker + Docker Compose |
+| **Deployment** | Railway (or any container platform) |
+
+## Roadmap
+
+### Phase 1 (Current)
+- [x] Core search & comparison
+- [x] Basic product database
+- [x] Frontend UI
+
+### Phase 2
+- [ ] Web scraping (Amazon, eBay, Best Buy, Walmart, etc.)
+- [ ] Price history tracking
+- [ ] User authentication
+- [ ] Watchlists & price alerts
+
+### Phase 3
+- [ ] Mobile app (React Native)
+- [ ] Advanced filters (brand, rating, shipping)
+- [ ] Trending products
+- [ ] Analytics dashboard
+
+### Phase 4
+- [ ] AI-powered recommendations
+- [ ] Browser extension
+- [ ] Partner retailer integrations
+
+## Deployment
+
+### Railway (Recommended)
+
+See [DEPLOY.md](./DEPLOY.md) for complete Railway deployment guide.
+
+Quick version:
 ```bash
-# Backend
-railway add fastapi
-railway variables set DATABASE_URL=...
-railway up
-
-# Frontend
-railway add node
+railway login
+railway init
+railway add  # PostgreSQL
 railway up
 ```
 
-### Docker Hub
+### Docker
 
 ```bash
-docker build -f backend/Dockerfile -t myuser/deal-aggregator-api ./backend
-docker build -f frontend/Dockerfile -t myuser/deal-aggregator-web ./frontend
-docker push myuser/deal-aggregator-api
-docker push myuser/deal-aggregator-web
+# Build images
+docker build -f backend/Dockerfile -t deal-aggregator-api ./backend
+docker build -f frontend/Dockerfile -t deal-aggregator-web ./frontend
+
+# Push to registry
+docker push yourusername/deal-aggregator-api
+docker push yourusername/deal-aggregator-web
 ```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+For issues, questions, or suggestions, please open a GitHub issue.
+
+## Acknowledgments
+
+- Built with [FastAPI](https://fastapi.tiangolo.com)
+- Built with [React](https://react.dev)
+- Styled with [TailwindCSS](https://tailwindcss.com)
+- Deployed with [Railway](https://railway.app)
