@@ -22,7 +22,17 @@ try:
 except:
     HAS_PLAYWRIGHT = False
 
+try:
+    from exa_py import Exa
+    HAS_EXA = True
+except:
+    HAS_EXA = False
+
+import os
 import httpx
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -287,15 +297,71 @@ class MockScraper(RetailerScraper):
             for i in range(1, limit + 1)
         ]
         return products
-
+class ExaScraper(RetailerScraper):
+    """AI-powered scraper using Exa.ai to find deals across the web"""
+    
+    def __init__(self, api_key: Optional[str] = None):
+        super().__init__('AI Scout', 'https://exa.ai')
+        self.api_key = api_key or os.getenv("EXA_API_KEY")
+    
+    async def search(self, query: str, limit: int = 10) -> List[Dict]:
+        """Search for the best deals using Exa.ai"""
+        if not HAS_EXA or not self.api_key:
+            logger.warning("ExaScraper: Exa not installed or API key missing.")
+            return []
+            
+        try:
+            exa = Exa(self.api_key)
+            # Specialized query for deal discovery
+            search_query = f"Finding the absolute lowest price and best current deals for: {query}"
+            
+            # Using Exa to find clean product results
+            results = exa.search_and_contents(
+                search_query,
+                num_results=limit,
+                text={"max_characters": 800},
+                highlights={"num_sentences": 2},
+                type="neural",
+                category="company" # Focus on retailers/products
+            )
+            
+            products = []
+            for res in results.results:
+                try:
+                    # Heuristic for price extraction from title/content
+                    # Real-world use would involve LLM parsing or regex
+                    import re
+                    price_match = re.search(r'\$(\d+(?:\.\d{2})?)', res.text or res.title)
+                    price = float(price_match.group(1)) if price_match else 0.0
+                    
+                    if price == 0.0: continue # Skip if no price found (for now)
+                    
+                    # Clean up retailer name from URL/Title
+                    retailer = res.title.split('-')[1].strip() if '-' in res.title else self.name
+                    if len(retailer) > 20: retailer = "Retailer"
+                    
+                    products.append({
+                        'retailer': retailer,
+                        'name': res.title[:60],
+                        'price': price,
+                        'url': res.url,
+                        'highlights': res.highlights[0] if res.highlights else ""
+                    })
+                except:
+                    continue
+                    
+            return products
+        except Exception as e:
+            logger.error(f"ExaScraper error: {e}")
+            return []
 
 class DealAggregator:
     """Main scraper orchestrator"""
     
     def __init__(self):
         self.scrapers = [
-            AmazonPlaywrightScraper(),  # Try JS-rendered Amazon first
-            AmazonScraper(),             # Fallback to basic HTTP scraper
+            ExaScraper(),                # AI Scout first for broad coverage
+            AmazonPlaywrightScraper(),    # Reliable JS scraper
             EbayScraper(),
             BestBuyScraper(),
         ]

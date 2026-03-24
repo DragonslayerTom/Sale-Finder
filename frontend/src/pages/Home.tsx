@@ -1,61 +1,65 @@
-import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-export default function Home() {
-  const navigate = useNavigate()
-  const [query, setQuery] = useState('')
+const Home: React.FC = () => {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState('');
 
   const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (query.trim()) {
-      navigate(`/search?q=${encodeURIComponent(query)}`)
+      navigate(`/search?q=${encodeURIComponent(query)}`);
     }
-  }
+  };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-20 text-center">
-      <h1 className="text-5xl font-bold text-gray-900 mb-4">
-        Find the Best Deals 🎯
-      </h1>
-      <p className="text-xl text-gray-600 mb-8">
-        Search and compare prices across 50+ retailers instantly
-      </p>
+    <div className="relative isolate overflow-hidden min-h-[90vh] flex flex-col items-center justify-center px-6">
+      {/* Background glow */}
+      <div className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80">
+        <div className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#00acee] to-[#9b51e0] opacity-20 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"></div>
+      </div>
 
-      <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-12">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search for products... (e.g., headphones, laptop)"
-            className="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            type="submit"
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-          >
-            Search
-          </button>
-        </div>
-      </form>
+      <div className="text-center max-w-4xl mx-auto">
+        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 mt-16">
+          Find the best deals, <br/>
+          <span className="text-gradient">AI-Powered.</span>
+        </h1>
+        <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+          Aggregating prices from 50+ retailers using neural search. 
+          Stop overpaying and start discover the absolute lowest prices instantly.
+        </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="text-3xl mb-2">⚡</div>
-          <h2 className="text-xl font-bold mb-2">Fast Comparison</h2>
-          <p className="text-gray-600">Compare prices across retailers in seconds</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="text-3xl mb-2">📊</div>
-          <h2 className="text-xl font-bold mb-2">Real-Time Prices</h2>
-          <p className="text-gray-600">Always up-to-date pricing information</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="text-3xl mb-2">💚</div>
-          <h2 className="text-xl font-bold mb-2">100% Free</h2>
-          <p className="text-gray-600">No signup or hidden fees</p>
+        <form onSubmit={handleSearch} className="relative max-w-2xl mx-auto group">
+          <div className="flex glass rounded-full p-2 transition-all duration-300 group-focus-within:ring-2 group-focus-within:ring-blue-500/50 group-focus-within:bg-white/10">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="What are you looking for today?"
+              className="flex-1 bg-transparent border-none focus:ring-0 px-6 py-3 text-lg text-white placeholder-slate-500"
+            />
+            <button
+              type="submit"
+              className="btn-primary"
+            >
+              Search
+            </button>
+          </div>
+        </form>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-20 opacity-60 hover:opacity-100 transition-opacity">
+          {['Amazon', 'eBay', 'Best Buy', 'Walmart', 'Target', 'Newegg'].map((brand) => (
+            <div key={brand} className="glass py-3 px-6 rounded-xl text-sm font-medium text-slate-400 border-white/5">
+              {brand}
+            </div>
+          ))}
+          <div className="glass py-3 px-6 rounded-xl text-sm font-medium text-blue-400 border-blue-500/20 col-span-2 md:col-span-1">
+            + 44 More
+          </div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
+
+export default Home;
