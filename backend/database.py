@@ -7,10 +7,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-load_dotenv()
+load_dotenv(override=False)  # Don't override existing env vars (Railway sets DATABASE_URL)
 
 # Get DATABASE_URL from environment (Railway sets this automatically)
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.environ.get("DATABASE_URL") or os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
     # Fallback: try to construct from individual environment variables
