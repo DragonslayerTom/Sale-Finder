@@ -95,3 +95,4 @@ htmlcov/
 .turbo/
 *.bak
 *.tmp
+.env
